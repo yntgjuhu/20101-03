@@ -93,8 +93,8 @@ function spawnEnemy() {
         startX = Math.random() * window.innerWidth;
         startY = 0;
     } else {
-        // From left
-        startX = 0;
+        // From right
+        startX = window.innerWidth;
         startY = Math.random() * window.innerHeight;
     }
 
