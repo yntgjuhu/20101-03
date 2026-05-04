@@ -3,6 +3,7 @@ const body = document.body;
 
 let mouseX = 0;
 let mouseY = 0;
+let enemies = [];
 
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -52,8 +53,25 @@ function fireBullet(targetX, targetY) {
         const newX = parseFloat(bullet.style.left) + unitDirX * moveDistance;
         const newY = parseFloat(bullet.style.top) + unitDirY * moveDistance;
 
-        // Check if bullet is out of bounds
-        if (newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
+        // Check collision with enemies
+        let hit = false;
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const enemy = enemies[i];
+            const enemyX = parseFloat(enemy.style.left) + 10; // center
+            const enemyY = parseFloat(enemy.style.top) + 10;
+            const dx = newX - enemyX;
+            const dy = newY - enemyY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 15) { // collision threshold
+                enemy.remove();
+                enemies.splice(i, 1);
+                hit = true;
+                break;
+            }
+        }
+
+        // Check if bullet is out of bounds or hit
+        if (hit || newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
             bullet.remove();
         } else {
             bullet.style.left = `${newX}px`;
@@ -63,3 +81,63 @@ function fireBullet(targetX, targetY) {
     }
     animate();
 }
+
+function spawnEnemy() {
+    const cannonRect = cannon.getBoundingClientRect();
+    const targetX = cannonRect.left + cannonRect.width / 2;
+    const targetY = cannonRect.top + cannonRect.height / 2;
+
+    let startX, startY;
+    if (Math.random() < 0.5) {
+        // From top
+        startX = Math.random() * window.innerWidth;
+        startY = 0;
+    } else {
+        // From left
+        startX = 0;
+        startY = Math.random() * window.innerHeight;
+    }
+
+    const enemy = document.createElement('div');
+    enemy.classList.add('enemy');
+    enemy.style.left = `${startX}px`;
+    enemy.style.top = `${startY}px`;
+    body.appendChild(enemy);
+    enemies.push(enemy);
+
+    const speed = 100; // pixels per second
+    let lastTime = Date.now();
+
+    // Calculate direction vector
+    const dirX = targetX - startX;
+    const dirY = targetY - startY;
+    const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
+    const unitDirX = dirX / dirLength;
+    const unitDirY = dirY / dirLength;
+
+    function animate() {
+        const currentTime = Date.now();
+        const deltaTime = (currentTime - lastTime) / 1000; // seconds
+        lastTime = currentTime;
+
+        const moveDistance = speed * deltaTime;
+        const newX = parseFloat(enemy.style.left) + unitDirX * moveDistance;
+        const newY = parseFloat(enemy.style.top) + unitDirY * moveDistance;
+
+        // Check if enemy reached cannon or out of bounds
+        const dx = newX - targetX;
+        const dy = newY - targetY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 10 || newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
+            enemy.remove();
+            enemies.splice(enemies.indexOf(enemy), 1);
+        } else {
+            enemy.style.left = `${newX}px`;
+            enemy.style.top = `${newY}px`;
+            requestAnimationFrame(animate);
+        }
+    }
+    animate();
+}
+
+setInterval(spawnEnemy, 1000);

@@ -37,3 +37,11 @@ body {
     border-radius: 50%;
     pointer-events: none;
 }
+
+.enemy {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: blue;
+    pointer-events: none;
+}
