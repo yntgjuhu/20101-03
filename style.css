@@ -1,0 +1,50 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background-color: #f0f0f0;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+#cannon {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 100px;
+    height: 50px;
+    background-color: #8B4513;
+    border-radius: 25px 25px 0 0;
+    transform-origin: 25px 25px; /* 從左下角旋轉 */
+}
+
+#cannon::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 80px;
+    height: 30px;
+    background-color: #654321;
+    border-radius: 15px;
+}
+
+#cannon::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 90px;
+    width: 40px;
+    height: 20px;
+    background-color: #654321;
+    border-radius: 10px;
+}
+
+.bullet {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #000;
+    border-radius: 50%;
+    pointer-events: none;
+}
