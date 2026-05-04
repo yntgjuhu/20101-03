@@ -36,25 +36,29 @@ function fireBullet(targetX, targetY) {
     const speed = 500; // pixels per second
     let lastTime = Date.now();
 
+    // Calculate direction vector
+    const dirX = targetX - startX;
+    const dirY = targetY - startY;
+    const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
+    const unitDirX = dirX / dirLength;
+    const unitDirY = dirY / dirLength;
+
     function animate() {
         const currentTime = Date.now();
         const deltaTime = (currentTime - lastTime) / 1000; // seconds
         lastTime = currentTime;
 
-        const dx = targetX - parseFloat(bullet.style.left);
-        const dy = targetY - parseFloat(bullet.style.top);
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const moveDistance = speed * deltaTime;
+        const newX = parseFloat(bullet.style.left) + unitDirX * moveDistance;
+        const newY = parseFloat(bullet.style.top) + unitDirY * moveDistance;
 
-        if (distance > 1) { // threshold to stop
-            const moveDistance = speed * deltaTime;
-            const ratio = moveDistance / distance;
-            const newX = parseFloat(bullet.style.left) + dx * ratio;
-            const newY = parseFloat(bullet.style.top) + dy * ratio;
+        // Check if bullet is out of bounds
+        if (newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
+            bullet.remove();
+        } else {
             bullet.style.left = `${newX}px`;
             bullet.style.top = `${newY}px`;
             requestAnimationFrame(animate);
-        } else {
-            bullet.remove();
         }
     }
     animate();
