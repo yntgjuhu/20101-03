@@ -19,10 +19,10 @@ function updateCannonRotation() {
 }
 
 document.addEventListener('click', (e) => {
-    fireBullet();
+    fireBullet(e.clientX, e.clientY);
 });
 
-function fireBullet() {
+function fireBullet(targetX, targetY) {
     const cannonRect = cannon.getBoundingClientRect();
     const startX = cannonRect.left + cannonRect.width;
     const startY = cannonRect.top + cannonRect.height / 2;
@@ -33,17 +33,25 @@ function fireBullet() {
     bullet.style.top = `${startY}px`;
     body.appendChild(bullet);
 
-    const duration = 1000; // 1 second
-    const startTime = Date.now();
+    const speed = 500; // pixels per second
+    let lastTime = Date.now();
 
     function animate() {
-        const elapsed = Date.now() - startTime;
-        const progress = elapsed / duration;
-        if (progress < 1) {
-            const currentX = startX + (mouseX - startX) * progress;
-            const currentY = startY + (mouseY - startY) * progress;
-            bullet.style.left = `${currentX}px`;
-            bullet.style.top = `${currentY}px`;
+        const currentTime = Date.now();
+        const deltaTime = (currentTime - lastTime) / 1000; // seconds
+        lastTime = currentTime;
+
+        const dx = targetX - parseFloat(bullet.style.left);
+        const dy = targetY - parseFloat(bullet.style.top);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 1) { // threshold to stop
+            const moveDistance = speed * deltaTime;
+            const ratio = moveDistance / distance;
+            const newX = parseFloat(bullet.style.left) + dx * ratio;
+            const newY = parseFloat(bullet.style.top) + dy * ratio;
+            bullet.style.left = `${newX}px`;
+            bullet.style.top = `${newY}px`;
             requestAnimationFrame(animate);
         } else {
             bullet.remove();
