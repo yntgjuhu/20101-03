@@ -30,7 +30,10 @@ function updateAbilityStatus() {
     const fRemaining = fCooldown ? Math.max(0, fCooldownEnd - now) / 1000 : 0;
     const eText = eCooldown ? `E Cooldown: ${eRemaining.toFixed(1)}s` : 'E Ready (press E)';
     const rText = rCooldown ? `R Cooldown: ${rRemaining.toFixed(1)}s` : 'R Ready (press R)';
-    abilityStatus.textContent = `${eText}\n${rText}`;
+    const fText = fCooldown ? `F Cooldown: ${fRemaining.toFixed(1)}s` : 'F Ready (press F)';
+    abilityStatus.textContent = `${eText}\n${rText}\n${fText}`;
+    // debug
+    // console.log('abilityStatus updated', {eRemaining, rRemaining, fRemaining});
     
     // Update R cooldown display
     if (rCooldown) {
@@ -95,6 +98,7 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+    console.log('Key pressed:', e.key);
     if (e.key === 'l' || e.key === 'L') {
         score = 0;
         updateScoreboard();
@@ -106,6 +110,7 @@ document.addEventListener('keydown', (e) => {
         triggerR();
     }
     if (e.key === 'f' || e.key === 'F') {
+        console.log('F key detected!');
         triggerF();
     }
 });
@@ -140,17 +145,20 @@ function triggerR() {
 }
 
 function triggerF() {
+    console.log('triggerF called, fCooldown:', fCooldown);
     if (fCooldown) return;
     fCooldown = true;
     fCooldownEnd = Date.now() + fCooldownDuration;
     updateAbilityStatus();
     refreshCooldown();
+    console.log('F skill triggered, firing 6 bullets');
 
     const baseSize = 10;
     const fSize = Math.round(baseSize * 1.5);
     for (let i = 0; i < 6; i++) {
         const randomOffset = (Math.random() * 30 - 15) * Math.PI / 180;
         setTimeout(() => {
+            console.log('Firing F bullet', i, 'at', mouseX, mouseY);
             fireBullet(mouseX, mouseY, randomOffset, {
                 size: fSize,
                 color: 'orange',
