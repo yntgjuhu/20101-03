@@ -3,6 +3,7 @@ const body = document.body;
 
 const scoreDisplay = document.getElementById('scoreboard');
 const abilityStatus = document.getElementById('ability-status');
+const rCooldownDisplay = document.getElementById('r-cooldown');
 let mouseX = 0;
 let mouseY = 0;
 let enemies = [];
@@ -25,6 +26,16 @@ function updateAbilityStatus() {
     const eText = eCooldown ? `E Cooldown: ${eRemaining.toFixed(1)}s` : 'E Ready (press E)';
     const rText = rCooldown ? `R Cooldown: ${rRemaining.toFixed(1)}s` : 'R Ready (press R)';
     abilityStatus.textContent = `${eText}\n${rText}`;
+    
+    // Update R cooldown display
+    if (rCooldown) {
+        const rPercent = Math.max(0, (rCooldownDuration - (now - rCooldownEnd + rCooldownDuration)) / rCooldownDuration * 100);
+        rCooldownDisplay.textContent = `R: ${rRemaining.toFixed(1)}s`;
+        rCooldownDisplay.style.borderColor = `rgb(${Math.floor(255 * (1 - rPercent / 100))}, ${Math.floor(144 + 111 * (rPercent / 100))}, ${Math.floor(144)})`;
+    } else {
+        rCooldownDisplay.textContent = `R Ready (按 R)`;
+        rCooldownDisplay.style.borderColor = '#90EE90';
+    }
 }
 
 function refreshCooldown() {
