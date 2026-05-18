@@ -4,6 +4,7 @@ const body = document.body;
 const scoreDisplay = document.getElementById('scoreboard');
 const abilityStatus = document.getElementById('ability-status');
 const rCooldownDisplay = document.getElementById('r-cooldown');
+const fCooldownDisplay = document.getElementById('f-cooldown');
 let mouseX = 0;
 let mouseY = 0;
 let enemies = [];
@@ -14,6 +15,9 @@ const eCooldownDuration = 2000;
 let rCooldown = false;
 let rCooldownEnd = 0;
 const rCooldownDuration = 5000;
+let fCooldown = false;
+let fCooldownEnd = 0;
+const fCooldownDuration = 8000;
 
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
@@ -23,6 +27,7 @@ function updateAbilityStatus() {
     const now = Date.now();
     const eRemaining = eCooldown ? Math.max(0, eCooldownEnd - now) / 1000 : 0;
     const rRemaining = rCooldown ? Math.max(0, rCooldownEnd - now) / 1000 : 0;
+    const fRemaining = fCooldown ? Math.max(0, fCooldownEnd - now) / 1000 : 0;
     const eText = eCooldown ? `E Cooldown: ${eRemaining.toFixed(1)}s` : 'E Ready (press E)';
     const rText = rCooldown ? `R Cooldown: ${rRemaining.toFixed(1)}s` : 'R Ready (press R)';
     abilityStatus.textContent = `${eText}\n${rText}`;
@@ -36,6 +41,16 @@ function updateAbilityStatus() {
         rCooldownDisplay.textContent = `R Ready (按 R)`;
         rCooldownDisplay.style.borderColor = '#90EE90';
     }
+
+    // Update F cooldown display
+    if (fCooldown) {
+        const fPercent = Math.max(0, (fCooldownDuration - (now - fCooldownEnd + fCooldownDuration)) / fCooldownDuration * 100);
+        fCooldownDisplay.textContent = `F: ${fRemaining.toFixed(1)}s`;
+        fCooldownDisplay.style.borderColor = `rgb(${Math.floor(255 * (1 - fPercent / 100))}, ${Math.floor(165 + 90 * (fPercent / 100))}, ${Math.floor(0)})`;
+    } else {
+        fCooldownDisplay.textContent = `F Ready (按 F)`;
+        fCooldownDisplay.style.borderColor = '#FFA500';
+    }
 }
 
 function refreshCooldown() {
@@ -47,10 +62,13 @@ function refreshCooldown() {
     if (rCooldown && now >= rCooldownEnd) {
         rCooldown = false;
     }
+    if (fCooldown && now >= fCooldownEnd) {
+        fCooldown = false;
+    }
 
     updateAbilityStatus();
 
-    if (eCooldown || rCooldown) {
+    if (eCooldown || rCooldown || fCooldown) {
         requestAnimationFrame(refreshCooldown);
     }
 }
@@ -87,6 +105,9 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'r' || e.key === 'R') {
         triggerR();
     }
+    if (e.key === 'f' || e.key === 'F') {
+        triggerF();
+    }
 });
 
 function triggerSpecial() {
@@ -118,6 +139,27 @@ function triggerR() {
     });
 }
 
+function triggerF() {
+    if (fCooldown) return;
+    fCooldown = true;
+    fCooldownEnd = Date.now() + fCooldownDuration;
+    updateAbilityStatus();
+    refreshCooldown();
+
+    const baseSize = 10;
+    const fSize = Math.round(baseSize * 1.5);
+    for (let i = 0; i < 6; i++) {
+        const randomOffset = (Math.random() * 30 - 15) * Math.PI / 180;
+        setTimeout(() => {
+            fireBullet(mouseX, mouseY, randomOffset, {
+                size: fSize,
+                color: 'orange',
+                persistOnHit: true,
+            });
+        }, i * 40);
+    }
+}
+
 function spawnExplosion(x, y) {
     for (let i = 0; i < 25; i++) {
         const randomAngle = Math.random() * Math.PI * 2;
@@ -130,7 +172,7 @@ function spawnExplosion(x, y) {
 }
 
 function createBullet(startX, startY, angle, options = {}) {
-    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false} = options;
+    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
     bullet.style.width = `${size}px`;
@@ -171,7 +213,8 @@ function createBullet(startX, startY, angle, options = {}) {
             const dx = bulletCenterX - enemyX;
             const dy = bulletCenterY - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < 15) {
+            const collisionThreshold = 10 + halfSize; // enemy radius (10) + bullet radius
+            if (distance < collisionThreshold) {
                 if (typeof enemy.destroyEnemy === 'function') {
                     enemy.destroyEnemy();
                 } else {
@@ -180,15 +223,46 @@ function createBullet(startX, startY, angle, options = {}) {
                 }
                 score += 1;
                 updateScoreboard();
-                if (explodeOnHit) {
-                    spawnExplosion(bulletCenterX, bulletCenterY);
+
+                if (persistOnHit) {
+                    // transform bullet: enlarge to 10x and fade out over 1s, do not remove immediately
+                    if (!bullet._transformed) {
+                        bullet._transformed = true;
+                        const origSize = size;
+                        const newSize = origSize * 10;
+                        const centerX = bulletCenterX;
+                        const centerY = bulletCenterY;
+                        bullet.style.backgroundColor = 'orange';
+                        bullet.style.width = `${newSize}px`;
+                        bullet.style.height = `${newSize}px`;
+                        bullet.style.left = `${centerX - newSize / 2}px`;
+                        bullet.style.top = `${centerY - newSize / 2}px`;
+                        bullet.style.transition = 'opacity 1s linear, width 0.2s linear, height 0.2s linear, left 0.2s linear, top 0.2s linear';
+                        // fade out after a tick so transition can apply
+                        setTimeout(() => {
+                            bullet.style.opacity = '0';
+                        }, 20);
+                        setTimeout(() => {
+                            bullet.remove();
+                        }, 1020);
+                    }
+                } else {
+                    if (explodeOnHit) {
+                        spawnExplosion(bulletCenterX, bulletCenterY);
+                    }
+                    bullet.remove();
                 }
                 hit = true;
                 break;
             }
         }
 
-        if (hit || newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
+        // only remove immediately if hit and not persistOnHit
+        if (hit) {
+            if (!persistOnHit) {
+                // already removed above
+            }
+        } else if (newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
             bullet.remove();
         } else {
             bullet.style.left = `${newX}px`;
