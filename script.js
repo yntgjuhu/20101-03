@@ -53,14 +53,16 @@ function fireBullet(targetX, targetY) {
         const newX = parseFloat(bullet.style.left) + unitDirX * moveDistance;
         const newY = parseFloat(bullet.style.top) + unitDirY * moveDistance;
 
-        // Check collision with enemies
+        // Check collision with enemies using bullet center
+        const bulletCenterX = newX + 5;
+        const bulletCenterY = newY + 5;
         let hit = false;
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
             const enemyX = parseFloat(enemy.style.left) + 10; // center
             const enemyY = parseFloat(enemy.style.top) + 10;
-            const dx = newX - enemyX;
-            const dy = newY - enemyY;
+            const dx = bulletCenterX - enemyX;
+            const dy = bulletCenterY - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < 15) { // collision threshold
                 enemy.remove();
