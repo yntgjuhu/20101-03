@@ -10,29 +10,38 @@ let score = 0;
 let eCooldown = false;
 let eCooldownEnd = 0;
 const eCooldownDuration = 2000;
+let rCooldown = false;
+let rCooldownEnd = 0;
+const rCooldownDuration = 5000;
 
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
 }
 
 function updateAbilityStatus() {
-    if (eCooldown) {
-        const remaining = Math.max(0, eCooldownEnd - Date.now()) / 1000;
-        abilityStatus.textContent = `E Cooldown: ${remaining.toFixed(1)}s`;
-    } else {
-        abilityStatus.textContent = 'E Ready (press E)';
-    }
+    const now = Date.now();
+    const eRemaining = eCooldown ? Math.max(0, eCooldownEnd - now) / 1000 : 0;
+    const rRemaining = rCooldown ? Math.max(0, rCooldownEnd - now) / 1000 : 0;
+    const eText = eCooldown ? `E Cooldown: ${eRemaining.toFixed(1)}s` : 'E Ready (press E)';
+    const rText = rCooldown ? `R Cooldown: ${rRemaining.toFixed(1)}s` : 'R Ready (press R)';
+    abilityStatus.textContent = `${eText}\n${rText}`;
 }
 
 function refreshCooldown() {
-    if (!eCooldown) return;
-    if (Date.now() >= eCooldownEnd) {
+    const now = Date.now();
+
+    if (eCooldown && now >= eCooldownEnd) {
         eCooldown = false;
-        updateAbilityStatus();
-        return;
     }
+    if (rCooldown && now >= rCooldownEnd) {
+        rCooldown = false;
+    }
+
     updateAbilityStatus();
-    requestAnimationFrame(refreshCooldown);
+
+    if (eCooldown || rCooldown) {
+        requestAnimationFrame(refreshCooldown);
+    }
 }
 
 updateScoreboard();
@@ -64,6 +73,9 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'e' || e.key === 'E') {
         triggerSpecial();
     }
+    if (e.key === 'r' || e.key === 'R') {
+        triggerR();
+    }
 });
 
 function triggerSpecial() {
@@ -81,40 +93,65 @@ function triggerSpecial() {
     }
 }
 
-function fireBullet(targetX, targetY, angleOffset = 0) {
-    const cannonRect = cannon.getBoundingClientRect();
-    const startX = cannonRect.left + cannonRect.width;
-    const startY = cannonRect.top + cannonRect.height / 2;
+function triggerR() {
+    if (rCooldown) return;
+    rCooldown = true;
+    rCooldownEnd = Date.now() + rCooldownDuration;
+    updateAbilityStatus();
+    refreshCooldown();
 
+    fireBullet(mouseX, mouseY, 0, {
+        size: 20,
+        color: 'green',
+        explodeOnHit: true,
+    });
+}
+
+function spawnExplosion(x, y) {
+    for (let i = 0; i < 25; i++) {
+        const randomAngle = Math.random() * Math.PI * 2;
+        createBullet(x - 5, y - 5, randomAngle, {
+            size: 10,
+            color: 'green',
+            lifetime: 1000,
+        });
+    }
+}
+
+function createBullet(startX, startY, angle, options = {}) {
+    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
+    bullet.style.width = `${size}px`;
+    bullet.style.height = `${size}px`;
+    bullet.style.backgroundColor = color;
     bullet.style.left = `${startX}px`;
     bullet.style.top = `${startY}px`;
     body.appendChild(bullet);
 
     const speed = 500; // pixels per second
     let lastTime = Date.now();
-
-    // Calculate direction vector with optional angle offset
-    const dirX = targetX - startX;
-    const dirY = targetY - startY;
-    const dirLength = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-    const angle = Math.atan2(dirY, dirX) + angleOffset;
+    const spawnTime = Date.now();
     const unitDirX = Math.cos(angle);
     const unitDirY = Math.sin(angle);
+    const halfSize = size / 2;
 
     function animate() {
         const currentTime = Date.now();
         const deltaTime = (currentTime - lastTime) / 1000; // seconds
         lastTime = currentTime;
 
+        if (lifetime && currentTime - spawnTime >= lifetime) {
+            bullet.remove();
+            return;
+        }
+
         const moveDistance = speed * deltaTime;
         const newX = parseFloat(bullet.style.left) + unitDirX * moveDistance;
         const newY = parseFloat(bullet.style.top) + unitDirY * moveDistance;
 
-        // Check collision with enemies using bullet center
-        const bulletCenterX = newX + 5;
-        const bulletCenterY = newY + 5;
+        const bulletCenterX = newX + halfSize;
+        const bulletCenterY = newY + halfSize;
         let hit = false;
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
@@ -123,7 +160,7 @@ function fireBullet(targetX, targetY, angleOffset = 0) {
             const dx = bulletCenterX - enemyX;
             const dy = bulletCenterY - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < 15) { // collision threshold
+            if (distance < 15) {
                 if (typeof enemy.destroyEnemy === 'function') {
                     enemy.destroyEnemy();
                 } else {
@@ -132,12 +169,14 @@ function fireBullet(targetX, targetY, angleOffset = 0) {
                 }
                 score += 1;
                 updateScoreboard();
+                if (explodeOnHit) {
+                    spawnExplosion(bulletCenterX, bulletCenterY);
+                }
                 hit = true;
                 break;
             }
         }
 
-        // Check if bullet is out of bounds or hit
         if (hit || newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
             bullet.remove();
         } else {
@@ -149,6 +188,16 @@ function fireBullet(targetX, targetY, angleOffset = 0) {
     animate();
 }
 
+function fireBullet(targetX, targetY, angleOffset = 0, options = {}) {
+    const cannonRect = cannon.getBoundingClientRect();
+    const startX = cannonRect.left + cannonRect.width;
+    const startY = cannonRect.top + cannonRect.height / 2;
+
+    const dirX = targetX - startX;
+    const dirY = targetY - startY;
+    const angle = Math.atan2(dirY, dirX) + angleOffset;
+    createBullet(startX, startY, angle, options);
+}
 function spawnEnemy() {
     const cannonRect = cannon.getBoundingClientRect();
     const targetX = cannonRect.left + cannonRect.width / 2;

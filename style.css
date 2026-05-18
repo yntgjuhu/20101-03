@@ -70,5 +70,6 @@ body {
     border-radius: 8px;
     font-family: Arial, sans-serif;
     font-size: 14px;
+    white-space: pre-line;
     z-index: 1000;
 }
