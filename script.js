@@ -65,8 +65,12 @@ function fireBullet(targetX, targetY) {
             const dy = bulletCenterY - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < 15) { // collision threshold
-                enemy.remove();
-                enemies.splice(i, 1);
+                if (typeof enemy.destroyEnemy === 'function') {
+                    enemy.destroyEnemy();
+                } else {
+                    enemy.remove();
+                    enemies.splice(i, 1);
+                }
                 hit = true;
                 break;
             }
@@ -109,6 +113,18 @@ function spawnEnemy() {
 
     const speed = 100; // pixels per second
     let lastTime = Date.now();
+    let removed = false;
+
+    function destroyEnemy() {
+        if (removed) return;
+        removed = true;
+        enemy.remove();
+        const index = enemies.indexOf(enemy);
+        if (index !== -1) {
+            enemies.splice(index, 1);
+        }
+    }
+    enemy.destroyEnemy = destroyEnemy;
 
     // Calculate direction vector
     const dirX = targetX - startX;
@@ -118,6 +134,8 @@ function spawnEnemy() {
     const unitDirY = dirY / dirLength;
 
     function animate() {
+        if (removed) return;
+
         const currentTime = Date.now();
         const deltaTime = (currentTime - lastTime) / 1000; // seconds
         lastTime = currentTime;
@@ -131,8 +149,7 @@ function spawnEnemy() {
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 10 || newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
-            enemy.remove();
-            enemies.splice(enemies.indexOf(enemy), 1);
+            destroyEnemy();
         } else {
             enemy.style.left = `${newX}px`;
             enemy.style.top = `${newY}px`;
