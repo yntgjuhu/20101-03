@@ -1,9 +1,42 @@
 const cannon = document.getElementById('cannon');
 const body = document.body;
 
+const scoreDisplay = document.getElementById('scoreboard');
+const abilityStatus = document.getElementById('ability-status');
 let mouseX = 0;
 let mouseY = 0;
 let enemies = [];
+let score = 0;
+let eCooldown = false;
+let eCooldownEnd = 0;
+const eCooldownDuration = 2000;
+
+function updateScoreboard() {
+    scoreDisplay.textContent = `Score: ${score}`;
+}
+
+function updateAbilityStatus() {
+    if (eCooldown) {
+        const remaining = Math.max(0, eCooldownEnd - Date.now()) / 1000;
+        abilityStatus.textContent = `E Cooldown: ${remaining.toFixed(1)}s`;
+    } else {
+        abilityStatus.textContent = 'E Ready (press E)';
+    }
+}
+
+function refreshCooldown() {
+    if (!eCooldown) return;
+    if (Date.now() >= eCooldownEnd) {
+        eCooldown = false;
+        updateAbilityStatus();
+        return;
+    }
+    updateAbilityStatus();
+    requestAnimationFrame(refreshCooldown);
+}
+
+updateScoreboard();
+updateAbilityStatus();
 
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -23,7 +56,32 @@ document.addEventListener('click', (e) => {
     fireBullet(e.clientX, e.clientY);
 });
 
-function fireBullet(targetX, targetY) {
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'l' || e.key === 'L') {
+        score = 0;
+        updateScoreboard();
+    }
+    if (e.key === 'e' || e.key === 'E') {
+        triggerSpecial();
+    }
+});
+
+function triggerSpecial() {
+    if (eCooldown) return;
+    eCooldown = true;
+    eCooldownEnd = Date.now() + eCooldownDuration;
+    updateAbilityStatus();
+    refreshCooldown();
+
+    const angleOffsets = [-15, 0, 15].map((deg) => deg * Math.PI / 180);
+    angleOffsets.forEach((offset, index) => {
+        setTimeout(() => {
+            fireBullet(mouseX, mouseY, offset);
+        }, index * 200);
+    });
+}
+
+function fireBullet(targetX, targetY, angleOffset = 0) {
     const cannonRect = cannon.getBoundingClientRect();
     const startX = cannonRect.left + cannonRect.width;
     const startY = cannonRect.top + cannonRect.height / 2;
@@ -37,12 +95,13 @@ function fireBullet(targetX, targetY) {
     const speed = 500; // pixels per second
     let lastTime = Date.now();
 
-    // Calculate direction vector
+    // Calculate direction vector with optional angle offset
     const dirX = targetX - startX;
     const dirY = targetY - startY;
-    const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
-    const unitDirX = dirX / dirLength;
-    const unitDirY = dirY / dirLength;
+    const dirLength = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+    const angle = Math.atan2(dirY, dirX) + angleOffset;
+    const unitDirX = Math.cos(angle);
+    const unitDirY = Math.sin(angle);
 
     function animate() {
         const currentTime = Date.now();
@@ -71,6 +130,8 @@ function fireBullet(targetX, targetY) {
                     enemy.remove();
                     enemies.splice(i, 1);
                 }
+                score += 1;
+                updateScoreboard();
                 hit = true;
                 break;
             }
