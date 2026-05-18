@@ -9,7 +9,7 @@ let enemies = [];
 let score = 0;
 let eCooldown = false;
 let eCooldownEnd = 0;
-const eCooldownDuration = 2000;
+const eCooldownDuration = 3000;
 
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
@@ -73,12 +73,12 @@ function triggerSpecial() {
     updateAbilityStatus();
     refreshCooldown();
 
-    const angleOffsets = [-15, 0, 15].map((deg) => deg * Math.PI / 180);
-    angleOffsets.forEach((offset, index) => {
+    for (let i = 0; i < 10; i++) {
+        const randomOffset = (Math.random() * 30 - 15) * Math.PI / 180;
         setTimeout(() => {
-            fireBullet(mouseX, mouseY, offset);
-        }, index * 200);
-    });
+            fireBullet(mouseX, mouseY, randomOffset);
+        }, i * 50);
+    }
 }
 
 function fireBullet(targetX, targetY, angleOffset = 0) {
