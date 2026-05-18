@@ -9,7 +9,7 @@ let enemies = [];
 let score = 0;
 let eCooldown = false;
 let eCooldownEnd = 0;
-const eCooldownDuration = 3000;
+const eCooldownDuration = 2000;
 
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
