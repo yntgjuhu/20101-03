@@ -3,8 +3,6 @@ const body = document.body;
 
 const scoreDisplay = document.getElementById('scoreboard');
 const abilityStatus = document.getElementById('ability-status');
-const rCooldownDisplay = document.getElementById('r-cooldown');
-const fCooldownDisplay = document.getElementById('f-cooldown');
 let mouseX = 0;
 let mouseY = 0;
 let enemies = [];
@@ -17,7 +15,7 @@ let rCooldownEnd = 0;
 const rCooldownDuration = 5000;
 let fCooldown = false;
 let fCooldownEnd = 0;
-const fCooldownDuration = 8000;
+const fCooldownDuration = 5000;
 
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
@@ -35,25 +33,7 @@ function updateAbilityStatus() {
     // debug
     // console.log('abilityStatus updated', {eRemaining, rRemaining, fRemaining});
     
-    // Update R cooldown display
-    if (rCooldown) {
-        const rPercent = Math.max(0, (rCooldownDuration - (now - rCooldownEnd + rCooldownDuration)) / rCooldownDuration * 100);
-        rCooldownDisplay.textContent = `R: ${rRemaining.toFixed(1)}s`;
-        rCooldownDisplay.style.borderColor = `rgb(${Math.floor(255 * (1 - rPercent / 100))}, ${Math.floor(144 + 111 * (rPercent / 100))}, ${Math.floor(144)})`;
-    } else {
-        rCooldownDisplay.textContent = `R Ready (按 R)`;
-        rCooldownDisplay.style.borderColor = '#90EE90';
-    }
-
-    // Update F cooldown display
-    if (fCooldown) {
-        const fPercent = Math.max(0, (fCooldownDuration - (now - fCooldownEnd + fCooldownDuration)) / fCooldownDuration * 100);
-        fCooldownDisplay.textContent = `F: ${fRemaining.toFixed(1)}s`;
-        fCooldownDisplay.style.borderColor = `rgb(${Math.floor(255 * (1 - fPercent / 100))}, ${Math.floor(165 + 90 * (fPercent / 100))}, ${Math.floor(0)})`;
-    } else {
-        fCooldownDisplay.textContent = `F Ready (按 F)`;
-        fCooldownDisplay.style.borderColor = '#FFA500';
-    }
+    // R and F cooldowns shown in ability-status; per request, no separate elements.
 }
 
 function refreshCooldown() {
