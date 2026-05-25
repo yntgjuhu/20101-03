@@ -16,6 +16,9 @@ const rCooldownDuration = 5000;
 let fCooldown = false;
 let fCooldownEnd = 0;
 const fCooldownDuration = 5000;
+let qCooldown = false;
+let qCooldownEnd = 0;
+const qCooldownDuration = 5000;
 
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
@@ -26,14 +29,16 @@ function updateAbilityStatus() {
     const eRemaining = eCooldown ? Math.max(0, eCooldownEnd - now) / 1000 : 0;
     const rRemaining = rCooldown ? Math.max(0, rCooldownEnd - now) / 1000 : 0;
     const fRemaining = fCooldown ? Math.max(0, fCooldownEnd - now) / 1000 : 0;
+    const qRemaining = qCooldown ? Math.max(0, qCooldownEnd - now) / 1000 : 0;
     const eText = eCooldown ? `E Cooldown: ${eRemaining.toFixed(1)}s` : 'E Ready (press E)';
     const rText = rCooldown ? `R Cooldown: ${rRemaining.toFixed(1)}s` : 'R Ready (press R)';
     const fText = fCooldown ? `F Cooldown: ${fRemaining.toFixed(1)}s` : 'F Ready (press F)';
-    abilityStatus.textContent = `${eText}\n${rText}\n${fText}`;
+    const qText = qCooldown ? `Q Cooldown: ${qRemaining.toFixed(1)}s` : 'Q Ready (press Q)';
+    abilityStatus.textContent = `${eText}\n${rText}\n${fText}\n${qText}`;
     // debug
-    // console.log('abilityStatus updated', {eRemaining, rRemaining, fRemaining});
+    // console.log('abilityStatus updated', {eRemaining, rRemaining, fRemaining, qRemaining});
     
-    // R and F cooldowns shown in ability-status; per request, no separate elements.
+    // R, F, Q cooldowns shown in ability-status; no separate elements.
 }
 
 function refreshCooldown() {
@@ -47,6 +52,9 @@ function refreshCooldown() {
     }
     if (fCooldown && now >= fCooldownEnd) {
         fCooldown = false;
+    }
+    if (qCooldown && now >= qCooldownEnd) {
+        qCooldown = false;
     }
 
     updateAbilityStatus();
@@ -93,6 +101,10 @@ document.addEventListener('keydown', (e) => {
         console.log('F key detected!');
         triggerF();
     }
+    if (e.key === 'q' || e.key === 'Q') {
+        console.log('Q key detected!');
+        triggerQ();
+    }
 });
 
 function triggerSpecial() {
@@ -102,7 +114,7 @@ function triggerSpecial() {
     updateAbilityStatus();
     refreshCooldown();
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 15; i++) {
         const randomOffset = (Math.random() * 30 - 15) * Math.PI / 180;
         setTimeout(() => {
             fireBullet(mouseX, mouseY, randomOffset);
@@ -148,6 +160,23 @@ function triggerF() {
     }
 }
 
+function triggerQ() {
+    if (qCooldown) return;
+    qCooldown = true;
+    qCooldownEnd = Date.now() + qCooldownDuration;
+    updateAbilityStatus();
+    refreshCooldown();
+
+    for (let i = 0; i < 3; i++) {
+        const offsetAngle = (i - 1) * 0.2;
+        fireBullet(mouseX, mouseY, offsetAngle, {
+            color: 'purple',
+            homing: true,
+            size: 12,
+        });
+    }
+}
+
 function spawnExplosion(x, y) {
     for (let i = 0; i < 25; i++) {
         const randomAngle = Math.random() * Math.PI * 2;
@@ -160,7 +189,7 @@ function spawnExplosion(x, y) {
 }
 
 function createBullet(startX, startY, angle, options = {}) {
-    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false} = options;
+    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
     bullet.style.width = `${size}px`;
@@ -187,22 +216,59 @@ function createBullet(startX, startY, angle, options = {}) {
         }
 
         const moveDistance = speed * deltaTime;
-        const newX = parseFloat(bullet.style.left) + unitDirX * moveDistance;
-        const newY = parseFloat(bullet.style.top) + unitDirY * moveDistance;
-
+        const bulletX = parseFloat(bullet.style.left);
+        const bulletY = parseFloat(bullet.style.top);
+        let currentDirX = unitDirX;
+        let currentDirY = unitDirY;
         const currentBulletWidth = parseFloat(bullet.style.width);
         const currentBulletHeight = parseFloat(bullet.style.height);
         const halfSizeX = currentBulletWidth / 2;
         const halfSizeY = currentBulletHeight / 2;
-        const bulletCenterX = newX + halfSizeX;
-        const bulletCenterY = newY + halfSizeY;
+        const bulletCenterX = bulletX + halfSizeX;
+        const bulletCenterY = bulletY + halfSizeY;
+
+        if (homing && enemies.length > 0) {
+            const cannonRect = cannon.getBoundingClientRect();
+            const cannonCenterX = cannonRect.left + cannonRect.width / 2;
+            const cannonCenterY = cannonRect.top + cannonRect.height / 2;
+            let nearest = null;
+            let nearestDist = Infinity;
+            for (const enemy of enemies) {
+                const enemyX = parseFloat(enemy.style.left) + 10;
+                const enemyY = parseFloat(enemy.style.top) + 10;
+                const dx = enemyX - cannonCenterX;
+                const dy = enemyY - cannonCenterY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = enemy;
+                }
+            }
+            if (nearest) {
+                const targetX = parseFloat(nearest.style.left) + 10;
+                const targetY = parseFloat(nearest.style.top) + 10;
+                const dx = targetX - bulletCenterX;
+                const dy = targetY - bulletCenterY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 0) {
+                    currentDirX = dx / dist;
+                    currentDirY = dy / dist;
+                }
+            }
+        }
+
+        const newX = bulletX + currentDirX * moveDistance;
+        const newY = bulletY + currentDirY * moveDistance;
+
+        const bulletCenterX2 = newX + halfSizeX;
+        const bulletCenterY2 = newY + halfSizeY;
         let hit = false;
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
             const enemyX = parseFloat(enemy.style.left) + 10; // center
             const enemyY = parseFloat(enemy.style.top) + 10;
-            const dx = bulletCenterX - enemyX;
-            const dy = bulletCenterY - enemyY;
+            const dx = bulletCenterX2 - enemyX;
+            const dy = bulletCenterY2 - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             const collisionThreshold = 10 + Math.max(halfSizeX, halfSizeY); // enemy radius (10) + bullet radius
             if (distance < collisionThreshold) {
@@ -347,4 +413,15 @@ function spawnEnemy() {
     animate();
 }
 
-setInterval(spawnEnemy, 1000);
+function getSpawnInterval() {
+    return Math.max(100, 1000 - Math.floor(score / 10) * 1);
+}
+
+function scheduleNextSpawn() {
+    setTimeout(() => {
+        spawnEnemy();
+        scheduleNextSpawn();
+    }, getSpawnInterval());
+}
+
+scheduleNextSpawn();
