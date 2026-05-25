@@ -283,13 +283,13 @@ function spawnEnemy() {
 
     let startX, startY;
     if (Math.random() < 0.5) {
-        // From top
-        startX = Math.random() * window.innerWidth;
+        // From top-right half of the screen
+        startX = window.innerWidth / 2 + Math.random() * (window.innerWidth / 2);
         startY = 0;
     } else {
-        // From right
+        // From right side, upper half
         startX = window.innerWidth;
-        startY = Math.random() * window.innerHeight;
+        startY = Math.random() * (window.innerHeight / 2);
     }
 
     const enemy = document.createElement('div');
