@@ -102,7 +102,7 @@ function triggerSpecial() {
     updateAbilityStatus();
     refreshCooldown();
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 25; i++) {
         const randomOffset = (Math.random() * 30 - 15) * Math.PI / 180;
         setTimeout(() => {
             fireBullet(mouseX, mouseY, randomOffset);
@@ -131,11 +131,11 @@ function triggerF() {
     fCooldownEnd = Date.now() + fCooldownDuration;
     updateAbilityStatus();
     refreshCooldown();
-    console.log('F skill triggered, firing 6 bullets');
+    console.log('F skill triggered, firing 10 bullets');
 
     const baseSize = 10;
     const fSize = Math.round(baseSize * 1.5);
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 10; i++) {
         const randomOffset = (Math.random() * 30 - 15) * Math.PI / 180;
         setTimeout(() => {
             console.log('Firing F bullet', i, 'at', mouseX, mouseY);
@@ -175,7 +175,6 @@ function createBullet(startX, startY, angle, options = {}) {
     const spawnTime = Date.now();
     const unitDirX = Math.cos(angle);
     const unitDirY = Math.sin(angle);
-    const halfSize = size / 2;
 
     function animate() {
         const currentTime = Date.now();
@@ -191,8 +190,12 @@ function createBullet(startX, startY, angle, options = {}) {
         const newX = parseFloat(bullet.style.left) + unitDirX * moveDistance;
         const newY = parseFloat(bullet.style.top) + unitDirY * moveDistance;
 
-        const bulletCenterX = newX + halfSize;
-        const bulletCenterY = newY + halfSize;
+        const currentBulletWidth = parseFloat(bullet.style.width);
+        const currentBulletHeight = parseFloat(bullet.style.height);
+        const halfSizeX = currentBulletWidth / 2;
+        const halfSizeY = currentBulletHeight / 2;
+        const bulletCenterX = newX + halfSizeX;
+        const bulletCenterY = newY + halfSizeY;
         let hit = false;
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
@@ -201,7 +204,7 @@ function createBullet(startX, startY, angle, options = {}) {
             const dx = bulletCenterX - enemyX;
             const dy = bulletCenterY - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const collisionThreshold = 10 + halfSize; // enemy radius (10) + bullet radius
+            const collisionThreshold = 10 + Math.max(halfSizeX, halfSizeY); // enemy radius (10) + bullet radius
             if (distance < collisionThreshold) {
                 if (typeof enemy.destroyEnemy === 'function') {
                     enemy.destroyEnemy();
@@ -245,11 +248,13 @@ function createBullet(startX, startY, angle, options = {}) {
             }
         }
 
-        // only remove immediately if hit and not persistOnHit
+        // continue animating for persistOnHit bullets after first hit
         if (hit) {
             if (!persistOnHit) {
                 // already removed above
+                return;
             }
+            requestAnimationFrame(animate);
         } else if (newX < 0 || newX > window.innerWidth || newY < 0 || newY > window.innerHeight) {
             bullet.remove();
         } else {
