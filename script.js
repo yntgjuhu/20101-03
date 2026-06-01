@@ -20,6 +20,12 @@ let qCooldown = false;
 let qCooldownEnd = 0;
 const qCooldownDuration = 5000;
 
+let enemySpeedMultiplier = 1;
+let spawnIntervalMultiplier = 1;
+const difficultyIncreaseInterval = 30000; // 每 30 秒提升一次
+const enemySpeedIncreaseFactor = 1.1; // 速度 +10%
+const spawnRateIncreaseFactor = 0.8; // 生成間隔降低 20%，敵人數量增加 20%
+
 function updateScoreboard() {
     scoreDisplay.textContent = `Score: ${score}`;
 }
@@ -365,7 +371,7 @@ function spawnEnemy() {
     body.appendChild(enemy);
     enemies.push(enemy);
 
-    const speed = 100; // pixels per second
+    const speed = 100 * enemySpeedMultiplier; // pixels per second
     let lastTime = Date.now();
     let removed = false;
 
@@ -414,7 +420,18 @@ function spawnEnemy() {
 }
 
 function getSpawnInterval() {
-    return Math.max(100, 1000 - Math.floor(score / 10) * 1);
+    return Math.max(100, (1000 - Math.floor(score / 10) * 1) * spawnIntervalMultiplier);
+}
+
+function increaseDifficulty() {
+    enemySpeedMultiplier *= enemySpeedIncreaseFactor;
+    spawnIntervalMultiplier *= spawnRateIncreaseFactor;
+}
+
+function scheduleDifficultyIncrease() {
+    setInterval(() => {
+        increaseDifficulty();
+    }, difficultyIncreaseInterval);
 }
 
 function scheduleNextSpawn() {
@@ -425,3 +442,4 @@ function scheduleNextSpawn() {
 }
 
 scheduleNextSpawn();
+scheduleDifficultyIncrease();
