@@ -161,6 +161,7 @@ function triggerF() {
                 size: fSize,
                 color: 'orange',
                 persistOnHit: true,
+                damage: 10,
             });
         }, i * 40);
     }
@@ -195,7 +196,7 @@ function spawnExplosion(x, y) {
 }
 
 function createBullet(startX, startY, angle, options = {}) {
-    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false} = options;
+    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
     bullet.style.width = `${size}px`;
@@ -281,8 +282,8 @@ function createBullet(startX, startY, angle, options = {}) {
             const distance = Math.sqrt(dx * dx + dy * dy);
             const collisionThreshold = enemySize / 2 + Math.max(halfSizeX, halfSizeY);
             if (distance < collisionThreshold) {
-                if (enemy.hp > 1) {
-                    enemy.hp -= 1;
+                if (enemy.hp > damage) {
+                    enemy.hp -= damage;
                     score += 1;
                     updateScoreboard();
                     if (!persistOnHit) {
