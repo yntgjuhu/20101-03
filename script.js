@@ -240,8 +240,9 @@ function createBullet(startX, startY, angle, options = {}) {
             let nearest = null;
             let nearestDist = Infinity;
             for (const enemy of enemies) {
-                const enemyX = parseFloat(enemy.style.left) + 10;
-                const enemyY = parseFloat(enemy.style.top) + 10;
+                const enemySize = parseFloat(enemy.style.width) || 20;
+                const enemyX = parseFloat(enemy.style.left) + enemySize / 2;
+                const enemyY = parseFloat(enemy.style.top) + enemySize / 2;
                 const dx = enemyX - cannonCenterX;
                 const dy = enemyY - cannonCenterY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -251,8 +252,9 @@ function createBullet(startX, startY, angle, options = {}) {
                 }
             }
             if (nearest) {
-                const targetX = parseFloat(nearest.style.left) + 10;
-                const targetY = parseFloat(nearest.style.top) + 10;
+                const nearestSize = parseFloat(nearest.style.width) || 20;
+                const targetX = parseFloat(nearest.style.left) + nearestSize / 2;
+                const targetY = parseFloat(nearest.style.top) + nearestSize / 2;
                 const dx = targetX - bulletCenterX;
                 const dy = targetY - bulletCenterY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -271,13 +273,24 @@ function createBullet(startX, startY, angle, options = {}) {
         let hit = false;
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
-            const enemyX = parseFloat(enemy.style.left) + 10; // center
-            const enemyY = parseFloat(enemy.style.top) + 10;
+            const enemySize = parseFloat(enemy.style.width) || 20;
+            const enemyX = parseFloat(enemy.style.left) + enemySize / 2;
+            const enemyY = parseFloat(enemy.style.top) + enemySize / 2;
             const dx = bulletCenterX2 - enemyX;
             const dy = bulletCenterY2 - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const collisionThreshold = 10 + Math.max(halfSizeX, halfSizeY); // enemy radius (10) + bullet radius
+            const collisionThreshold = enemySize / 2 + Math.max(halfSizeX, halfSizeY);
             if (distance < collisionThreshold) {
+                if (enemy.hp > 1) {
+                    enemy.hp -= 1;
+                    score += 1;
+                    updateScoreboard();
+                    if (!persistOnHit) {
+                        bullet.remove();
+                    }
+                    hit = true;
+                    break;
+                }
                 if (typeof enemy.destroyEnemy === 'function') {
                     enemy.destroyEnemy();
                 } else {
@@ -370,8 +383,10 @@ function spawnEnemy() {
     enemy.style.top = `${startY}px`;
     body.appendChild(enemy);
     enemies.push(enemy);
+    enemy.hp = 1;
+    enemy.speed = 100 * enemySpeedMultiplier;
 
-    const speed = 100 * enemySpeedMultiplier; // pixels per second
+    const speed = enemy.speed; // pixels per second
     let lastTime = Date.now();
     let removed = false;
 
@@ -419,6 +434,79 @@ function spawnEnemy() {
     animate();
 }
 
+function spawnHeavyEnemy() {
+    const cannonRect = cannon.getBoundingClientRect();
+    const targetX = cannonRect.left + cannonRect.width / 2;
+    const targetY = cannonRect.top + cannonRect.height / 2;
+
+    let startX, startY;
+    if (Math.random() < 0.5) {
+        startX = window.innerWidth / 2 + Math.random() * (window.innerWidth / 2);
+        startY = 0;
+    } else {
+        startX = window.innerWidth;
+        startY = Math.random() * (window.innerHeight / 2);
+    }
+
+    const enemy = document.createElement('div');
+    enemy.classList.add('enemy');
+    enemy.style.left = `${startX}px`;
+    enemy.style.top = `${startY}px`;
+    enemy.style.width = `40px`;
+    enemy.style.height = `40px`;
+    enemy.style.backgroundColor = 'red';
+    body.appendChild(enemy);
+    enemies.push(enemy);
+    enemy.hp = 5;
+    enemy.speed = 100 * 0.5 * enemySpeedMultiplier;
+
+    const speed = enemy.speed; // pixels per second
+    let lastTime = Date.now();
+    let removed = false;
+
+    function destroyEnemy() {
+        if (removed) return;
+        removed = true;
+        enemy.remove();
+        const index = enemies.indexOf(enemy);
+        if (index !== -1) {
+            enemies.splice(index, 1);
+        }
+    }
+    enemy.destroyEnemy = destroyEnemy;
+
+    // Calculate direction vector
+    const dirX = targetX - startX;
+    const dirY = targetY - startY;
+    const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
+    const unitDirX = dirX / dirLength;
+    const unitDirY = dirY / dirLength;
+
+    function animate() {
+        if (removed) return;
+
+        const currentTime = Date.now();
+        const deltaTime = (currentTime - lastTime) / 1000; // seconds
+        lastTime = currentTime;
+
+        const moveDistance = speed * deltaTime;
+        const newX = parseFloat(enemy.style.left) + unitDirX * moveDistance;
+        const newY = parseFloat(enemy.style.top) + unitDirY * moveDistance;
+
+        const dx = newX - targetX;
+        const dy = newY - targetY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 10 || newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
+            destroyEnemy();
+        } else {
+            enemy.style.left = `${newX}px`;
+            enemy.style.top = `${newY}px`;
+            requestAnimationFrame(animate);
+        }
+    }
+    animate();
+}
+
 function getSpawnInterval() {
     return Math.max(100, (1000 - Math.floor(score / 10) * 1) * spawnIntervalMultiplier);
 }
@@ -434,6 +522,12 @@ function scheduleDifficultyIncrease() {
     }, difficultyIncreaseInterval);
 }
 
+function scheduleHeavyEnemySpawn() {
+    setInterval(() => {
+        spawnHeavyEnemy();
+    }, 10000);
+}
+
 function scheduleNextSpawn() {
     setTimeout(() => {
         spawnEnemy();
@@ -443,3 +537,4 @@ function scheduleNextSpawn() {
 
 scheduleNextSpawn();
 scheduleDifficultyIncrease();
+scheduleHeavyEnemySpawn();
