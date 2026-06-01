@@ -284,8 +284,6 @@ function createBullet(startX, startY, angle, options = {}) {
             if (distance < collisionThreshold) {
                 if (enemy.hp > damage) {
                     enemy.hp -= damage;
-                    score += 1;
-                    updateScoreboard();
                     if (!persistOnHit) {
                         bullet.remove();
                     }
@@ -298,7 +296,7 @@ function createBullet(startX, startY, angle, options = {}) {
                     enemy.remove();
                     enemies.splice(i, 1);
                 }
-                score += 1;
+                score += enemy.scoreValue || 1;
                 updateScoreboard();
 
                 if (persistOnHit) {
@@ -386,6 +384,7 @@ function spawnEnemy() {
     enemies.push(enemy);
     enemy.hp = 1;
     enemy.speed = 100 * enemySpeedMultiplier;
+    enemy.scoreValue = 1;
 
     const speed = enemy.speed; // pixels per second
     let lastTime = Date.now();
@@ -460,6 +459,7 @@ function spawnHeavyEnemy() {
     enemies.push(enemy);
     enemy.hp = 5;
     enemy.speed = 100 * 0.5 * enemySpeedMultiplier;
+    enemy.scoreValue = 10;
 
     const speed = enemy.speed; // pixels per second
     let lastTime = Date.now();
@@ -534,6 +534,7 @@ function spawnFastEnemy() {
     enemies.push(enemy);
     enemy.hp = 1;
     enemy.speed = 100 * 1.25 * enemySpeedMultiplier;
+    enemy.scoreValue = 3;
 
     const speed = enemy.speed; // pixels per second
     let lastTime = Date.now();
