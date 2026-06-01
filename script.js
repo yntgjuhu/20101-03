@@ -59,7 +59,7 @@ function refreshCooldown() {
 
     updateAbilityStatus();
 
-    if (eCooldown || rCooldown || fCooldown) {
+    if (eCooldown || rCooldown || fCooldown || qCooldown) {
         requestAnimationFrame(refreshCooldown);
     }
 }
@@ -167,8 +167,8 @@ function triggerQ() {
     updateAbilityStatus();
     refreshCooldown();
 
-    for (let i = 0; i < 3; i++) {
-        const offsetAngle = (i - 1) * 0.2;
+    for (let i = 0; i < 5; i++) {
+        const offsetAngle = (i - 2) * 0.15;
         fireBullet(mouseX, mouseY, offsetAngle, {
             color: 'purple',
             homing: true,
