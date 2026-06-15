@@ -186,7 +186,7 @@ function triggerQ() {
 }
 
 function spawnExplosion(x, y) {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
         const randomAngle = Math.random() * Math.PI * 2;
         createBullet(x - 5, y - 5, randomAngle, {
             size: 10,
