@@ -19,6 +19,9 @@ const fCooldownDuration = 5000;
 let qCooldown = false;
 let qCooldownEnd = 0;
 const qCooldownDuration = 5000;
+let tCooldown = false;
+let tCooldownEnd = 0;
+const tCooldownDuration = 5000;
 
 let enemySpeedMultiplier = 1;
 let spawnIntervalMultiplier = 1;
@@ -36,11 +39,13 @@ function updateAbilityStatus() {
     const rRemaining = rCooldown ? Math.max(0, rCooldownEnd - now) / 1000 : 0;
     const fRemaining = fCooldown ? Math.max(0, fCooldownEnd - now) / 1000 : 0;
     const qRemaining = qCooldown ? Math.max(0, qCooldownEnd - now) / 1000 : 0;
+    const tRemaining = tCooldown ? Math.max(0, tCooldownEnd - now) / 1000 : 0;
     const eText = eCooldown ? `E Cooldown: ${eRemaining.toFixed(1)}s` : 'E Ready (press E)';
     const rText = rCooldown ? `R Cooldown: ${rRemaining.toFixed(1)}s` : 'R Ready (press R)';
     const fText = fCooldown ? `F Cooldown: ${fRemaining.toFixed(1)}s` : 'F Ready (press F)';
     const qText = qCooldown ? `Q Cooldown: ${qRemaining.toFixed(1)}s` : 'Q Ready (press Q)';
-    abilityStatus.textContent = `${eText}\n${rText}\n${fText}\n${qText}`;
+    const tText = tCooldown ? `T Cooldown: ${tRemaining.toFixed(1)}s` : 'T Ready (press T)';
+    abilityStatus.textContent = `${eText}\n${rText}\n${fText}\n${qText}\n${tText}`;
     // debug
     // console.log('abilityStatus updated', {eRemaining, rRemaining, fRemaining, qRemaining});
     
@@ -61,6 +66,9 @@ function refreshCooldown() {
     }
     if (qCooldown && now >= qCooldownEnd) {
         qCooldown = false;
+    }
+    if (tCooldown && now >= tCooldownEnd) {
+        tCooldown = false;
     }
 
     updateAbilityStatus();
@@ -190,6 +198,12 @@ function triggerQ() {
 }
 
 function triggerT() {
+    if (tCooldown) return;
+    tCooldown = true;
+    tCooldownEnd = Date.now() + tCooldownDuration;
+    updateAbilityStatus();
+    refreshCooldown();
+
     fireBullet(mouseX, mouseY, 0, {
         size: 30,
         color: 'black',
