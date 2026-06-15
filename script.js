@@ -161,6 +161,7 @@ function triggerF() {
                 size: fSize,
                 color: 'orange',
                 persistOnHit: true,
+                maxCollisions: 5,
                 damage: 10,
             });
         }, i * 40);
@@ -196,7 +197,7 @@ function spawnExplosion(x, y) {
 }
 
 function createBullet(startX, startY, angle, options = {}) {
-    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1} = options;
+    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1, maxCollisions = null} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
     bullet.style.width = `${size}px`;
@@ -205,6 +206,7 @@ function createBullet(startX, startY, angle, options = {}) {
     bullet.style.left = `${startX}px`;
     bullet.style.top = `${startY}px`;
     body.appendChild(bullet);
+    bullet.remainingHits = maxCollisions;
 
     const speed = 500; // pixels per second
     let lastTime = Date.now();
@@ -286,6 +288,12 @@ function createBullet(startX, startY, angle, options = {}) {
                     enemy.hp -= damage;
                     if (!persistOnHit) {
                         bullet.remove();
+                    } else if (bullet.remainingHits !== null) {
+                        bullet.remainingHits -= 1;
+                        if (bullet.remainingHits <= 0) {
+                            bullet.remove();
+                            return;
+                        }
                     }
                     hit = true;
                     break;
@@ -299,33 +307,21 @@ function createBullet(startX, startY, angle, options = {}) {
                 score += enemy.scoreValue || 1;
                 updateScoreboard();
 
-                if (persistOnHit) {
-                    // transform bullet: enlarge to 10x and fade out over 1s, do not remove immediately
-                    if (!bullet._transformed) {
-                        bullet._transformed = true;
-                        const origSize = size;
-                        const newSize = origSize * 10;
-                        const centerX = bulletCenterX;
-                        const centerY = bulletCenterY;
-                        bullet.style.backgroundColor = 'orange';
-                        bullet.style.width = `${newSize}px`;
-                        bullet.style.height = `${newSize}px`;
-                        bullet.style.left = `${centerX - newSize / 2}px`;
-                        bullet.style.top = `${centerY - newSize / 2}px`;
-                        bullet.style.transition = 'opacity 1s linear, width 0.2s linear, height 0.2s linear, left 0.2s linear, top 0.2s linear';
-                        // fade out after a tick so transition can apply
-                        setTimeout(() => {
-                            bullet.style.opacity = '0';
-                        }, 20);
-                        setTimeout(() => {
-                            bullet.remove();
-                        }, 1020);
-                    }
-                } else {
+                if (!persistOnHit) {
                     if (explodeOnHit) {
                         spawnExplosion(bulletCenterX, bulletCenterY);
                     }
                     bullet.remove();
+                    return;
+                }
+
+                if (bullet.remainingHits !== null) {
+                    bullet.remainingHits -= 1;
+                    if (bullet.remainingHits <= 0) {
+                        bullet.remove();
+                        hit = true;
+                        break;
+                    }
                 }
                 hit = true;
                 break;
