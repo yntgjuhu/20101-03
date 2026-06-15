@@ -186,7 +186,7 @@ function triggerQ() {
 }
 
 function spawnExplosion(x, y) {
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 30; i++) {
         const randomAngle = Math.random() * Math.PI * 2;
         createBullet(x - 5, y - 5, randomAngle, {
             size: 10,
@@ -286,6 +286,9 @@ function createBullet(startX, startY, angle, options = {}) {
             if (distance < collisionThreshold) {
                 if (enemy.hp > damage) {
                     enemy.hp -= damage;
+                    if (explodeOnHit) {
+                        spawnExplosion(bulletCenterX, bulletCenterY);
+                    }
                     if (!persistOnHit) {
                         bullet.remove();
                     } else if (bullet.remainingHits !== null) {
@@ -307,10 +310,10 @@ function createBullet(startX, startY, angle, options = {}) {
                 score += enemy.scoreValue || 1;
                 updateScoreboard();
 
+                if (explodeOnHit) {
+                    spawnExplosion(bulletCenterX, bulletCenterY);
+                }
                 if (!persistOnHit) {
-                    if (explodeOnHit) {
-                        spawnExplosion(bulletCenterX, bulletCenterY);
-                    }
                     bullet.remove();
                     return;
                 }
