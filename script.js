@@ -111,6 +111,10 @@ document.addEventListener('keydown', (e) => {
         console.log('Q key detected!');
         triggerQ();
     }
+    if (e.key === 't' || e.key === 'T') {
+        console.log('T key detected!');
+        triggerT();
+    }
 });
 
 function triggerSpecial() {
@@ -185,6 +189,21 @@ function triggerQ() {
     }
 }
 
+function triggerT() {
+    fireBullet(mouseX, mouseY, 0, {
+        size: 30,
+        color: 'black',
+        shatterOnHit: true,
+        shatterCount: 25,
+        shatterSpread: 45 * Math.PI / 180,
+        shatterBulletOptions: {
+            size: 10,
+            color: 'red',
+            damage: 1,
+        },
+    });
+}
+
 function spawnExplosion(x, y) {
     for (let i = 0; i < 50; i++) {
         const randomAngle = Math.random() * Math.PI * 2;
@@ -196,8 +215,19 @@ function spawnExplosion(x, y) {
     }
 }
 
+function spawnShatterBullets(centerX, centerY, baseAngle, count, spread, options = {}) {
+    const bulletSize = options.size || 10;
+    const startX = centerX - bulletSize / 2;
+    const startY = centerY - bulletSize / 2;
+    for (let i = 0; i < count; i++) {
+        const t = count === 1 ? 0.5 : i / (count - 1);
+        const angle = baseAngle - spread / 2 + t * spread;
+        createBullet(startX, startY, angle, options);
+    }
+}
+
 function createBullet(startX, startY, angle, options = {}) {
-    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1, maxCollisions = null} = options;
+    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1, maxCollisions = null, shatterOnHit = false, shatterCount = 0, shatterSpread = 0, shatterBulletOptions = {}} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
     bullet.style.width = `${size}px`;
@@ -289,6 +319,10 @@ function createBullet(startX, startY, angle, options = {}) {
                     if (explodeOnHit) {
                         spawnExplosion(bulletCenterX, bulletCenterY);
                     }
+                    if (shatterOnHit) {
+                        const baseAngle = Math.atan2(currentDirY, currentDirX);
+                        spawnShatterBullets(bulletCenterX, bulletCenterY, baseAngle, shatterCount, shatterSpread, shatterBulletOptions);
+                    }
                     if (!persistOnHit) {
                         bullet.remove();
                     } else if (bullet.remainingHits !== null) {
@@ -312,6 +346,10 @@ function createBullet(startX, startY, angle, options = {}) {
 
                 if (explodeOnHit) {
                     spawnExplosion(bulletCenterX, bulletCenterY);
+                }
+                if (shatterOnHit) {
+                    const baseAngle = Math.atan2(currentDirY, currentDirX);
+                    spawnShatterBullets(bulletCenterX, bulletCenterY, baseAngle, shatterCount, shatterSpread, shatterBulletOptions);
                 }
                 if (!persistOnHit) {
                     bullet.remove();
