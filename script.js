@@ -73,7 +73,7 @@ function refreshCooldown() {
 
     updateAbilityStatus();
 
-    if (eCooldown || rCooldown || fCooldown || qCooldown) {
+    if (eCooldown || rCooldown || fCooldown || qCooldown || tCooldown) {
         requestAnimationFrame(refreshCooldown);
     }
 }
@@ -752,5 +752,4 @@ scheduleDifficultyIncrease();
 scheduleHeavyEnemySpawn();
 scheduleFastEnemySpawn();
 scheduleBossSpawn();
-scheduleHeavyEnemySpawn();
-scheduleFastEnemySpawn();
+// NOTE: removed duplicate calls to avoid double-spawning enemies
