@@ -97,7 +97,7 @@ function updateCannonRotation() {
 
 document.addEventListener('click', (e) => {
     // Left click: fire straight, thin rounded-rectangle bullet at 5x speed, 5x longer, gold color
-    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 5, homing: false, width: 400, height: 20, color: 'gold' });
+    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 15, homing: false, width: 400, height: 10, color: 'gold' });
 });
 
 document.addEventListener('keydown', (e) => {
@@ -335,7 +335,7 @@ function createBullet(startX, startY, angle, options = {}) {
             const dx = bulletCenterX2 - enemyX;
             const dy = bulletCenterY2 - enemyY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const collisionThreshold = enemySize / 2 + Math.max(halfSizeX, halfSizeY);
+            const collisionThreshold = enemySize / 2 + Math.sqrt(halfSizeX * halfSizeX + halfSizeY * halfSizeY);
             if (distance < collisionThreshold) {
                 if (enemy.hp > damage) {
                     enemy.hp -= damage;
