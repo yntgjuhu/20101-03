@@ -96,8 +96,8 @@ function updateCannonRotation() {
 }
 
 document.addEventListener('click', (e) => {
-    // Left click: fire straight bullet at 3x speed
-    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 3, homing: false });
+    // Left click: fire straight, thin rounded-rectangle bullet at 3x speed
+    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 3, homing: false, width: 36, height: 8, color: 'red' });
 });
 
 document.addEventListener('keydown', (e) => {
@@ -242,11 +242,15 @@ function spawnShatterBullets(centerX, centerY, baseAngle, count, spread, options
 }
 
 function createBullet(startX, startY, angle, options = {}) {
-    const {size = 10, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1, maxCollisions = null, shatterOnHit = false, shatterCount = 0, shatterSpread = 0, shatterBulletOptions = {}} = options;
+    const {size = 10, width = null, height = null, color = 'red', lifetime = null, explodeOnHit = false, persistOnHit = false, homing = false, damage = 1, maxCollisions = null, shatterOnHit = false, shatterCount = 0, shatterSpread = 0, shatterBulletOptions = {}} = options;
     const bullet = document.createElement('div');
     bullet.classList.add('bullet');
-    bullet.style.width = `${size}px`;
-    bullet.style.height = `${size}px`;
+    const bw = width ?? size;
+    const bh = height ?? size;
+    bullet.style.width = `${bw}px`;
+    bullet.style.height = `${bh}px`;
+    // rounded ends: set border-radius to half of the smaller dimension (capsule for elongated bullets)
+    bullet.style.borderRadius = `${Math.min(bw, bh) / 2}px`;
     bullet.style.backgroundColor = color;
     bullet.style.left = `${startX}px`;
     bullet.style.top = `${startY}px`;
