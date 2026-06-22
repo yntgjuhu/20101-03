@@ -252,6 +252,8 @@ function createBullet(startX, startY, angle, options = {}) {
     // rounded ends: set border-radius to half of the smaller dimension (capsule for elongated bullets)
     bullet.style.borderRadius = `${Math.min(bw, bh) / 2}px`;
     bullet.style.backgroundColor = color;
+    bullet.style.transformOrigin = 'left center';
+    bullet.style.transform = `rotate(${angle}rad)`;
     bullet.style.left = `${startX}px`;
     bullet.style.top = `${startY}px`;
     body.appendChild(bullet);
