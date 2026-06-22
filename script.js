@@ -255,7 +255,7 @@ function createBullet(startX, startY, angle, options = {}) {
     bullet.style.transformOrigin = 'left center';
     bullet.style.transform = `rotate(${angle}rad)`;
     bullet.style.left = `${startX}px`;
-    bullet.style.top = `${startY}px`;
+    bullet.style.top = `${startY - bh / 2}px`;
     body.appendChild(bullet);
     bullet.remainingHits = maxCollisions;
 
@@ -411,13 +411,16 @@ function createBullet(startX, startY, angle, options = {}) {
 }
 
 function fireBullet(targetX, targetY, angleOffset = 0, options = {}) {
-    const cannonRect = cannon.getBoundingClientRect();
-    const startX = cannonRect.left + cannonRect.width;
-    const startY = cannonRect.top + cannonRect.height / 2;
+    const cannonWidth = cannon.offsetWidth;
+    const cannonHeight = cannon.offsetHeight;
+    const cannonX = cannon.offsetLeft;
+    const cannonY = cannon.offsetTop + cannonHeight / 2;
 
-    const dirX = targetX - startX;
-    const dirY = targetY - startY;
+    const dirX = targetX - cannonX;
+    const dirY = targetY - cannonY;
     const angle = Math.atan2(dirY, dirX) + angleOffset;
+    const startX = cannonX + Math.cos(angle) * cannonWidth;
+    const startY = cannonY + Math.sin(angle) * cannonWidth;
     createBullet(startX, startY, angle, options);
 }
 function spawnEnemy() {
