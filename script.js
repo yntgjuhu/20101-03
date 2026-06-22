@@ -96,8 +96,8 @@ function updateCannonRotation() {
 }
 
 document.addEventListener('click', (e) => {
-    // Left click: fire straight, thin rounded-rectangle bullet at 3x speed
-    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 3, homing: false, width: 36, height: 8, color: 'red' });
+    // Left click: fire straight, thin rounded-rectangle bullet at 5x speed, 5x longer, gold color
+    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 5, homing: false, width: 180, height: 40, color: 'gold' });
 });
 
 document.addEventListener('keydown', (e) => {
