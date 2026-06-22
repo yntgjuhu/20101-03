@@ -96,7 +96,8 @@ function updateCannonRotation() {
 }
 
 document.addEventListener('click', (e) => {
-    fireBullet(e.clientX, e.clientY);
+    // Left click: fire straight bullet at 3x speed
+    fireBullet(e.clientX, e.clientY, 0, { speedMultiplier: 3, homing: false });
 });
 
 document.addEventListener('keydown', (e) => {
@@ -252,7 +253,9 @@ function createBullet(startX, startY, angle, options = {}) {
     body.appendChild(bullet);
     bullet.remainingHits = maxCollisions;
 
-    const speed = 500; // pixels per second
+    const baseSpeed = options.speed || 500;
+    const speedMultiplier = options.speedMultiplier || 1;
+    const speed = baseSpeed * speedMultiplier; // pixels per second
     let lastTime = Date.now();
     const spawnTime = Date.now();
     const unitDirX = Math.cos(angle);
