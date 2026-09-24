@@ -130,6 +130,10 @@ function restartGame() {
     }, 100);
 }
 
+function simulateLPress() {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+}
+
 updateScoreboard();
 updateAbilityStatus();
 
@@ -537,7 +541,7 @@ function spawnEnemy() {
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 10) {
-            restartGame();
+            simulateLPress();
             destroyEnemy();
             return;
         }
@@ -616,7 +620,7 @@ function spawnHeavyEnemy() {
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 10) {
-            restartGame();
+            simulateLPress();
             destroyEnemy();
             return;
         }
@@ -695,7 +699,7 @@ function spawnFastEnemy() {
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 10) {
-            restartGame();
+            simulateLPress();
             destroyEnemy();
             return;
         }
@@ -804,7 +808,7 @@ function spawnBoss() {
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 10) {
-            restartGame();
+            simulateLPress();
             destroyEnemy();
             return;
         }
