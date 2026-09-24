@@ -23,6 +23,10 @@ let tCooldown = false;
 let tCooldownEnd = 0;
 const tCooldownDuration = 5000;
 
+let spawnLoopTimeoutId = null;
+let gameTimers = [];
+let isRestarting = false;
+
 let enemySpeedMultiplier = 1;
 let spawnIntervalMultiplier = 1;
 const difficultyIncreaseInterval = 30000; // 每 30 秒提升一次
@@ -78,6 +82,54 @@ function refreshCooldown() {
     }
 }
 
+function clearGameTimers() {
+    for (const timerId of gameTimers) {
+        clearInterval(timerId);
+        clearTimeout(timerId);
+    }
+    if (spawnLoopTimeoutId) {
+        clearTimeout(spawnLoopTimeoutId);
+        spawnLoopTimeoutId = null;
+    }
+    gameTimers = [];
+}
+
+function resetGameState() {
+    score = 0;
+    eCooldown = false;
+    rCooldown = false;
+    fCooldown = false;
+    qCooldown = false;
+    tCooldown = false;
+    eCooldownEnd = 0;
+    rCooldownEnd = 0;
+    fCooldownEnd = 0;
+    qCooldownEnd = 0;
+    tCooldownEnd = 0;
+    enemySpeedMultiplier = 1;
+    spawnIntervalMultiplier = 1;
+
+    document.querySelectorAll('.bullet, .enemy').forEach((node) => node.remove());
+    enemies = [];
+    updateScoreboard();
+    updateAbilityStatus();
+}
+
+function restartGame() {
+    if (isRestarting) return;
+    isRestarting = true;
+    clearGameTimers();
+    resetGameState();
+    scheduleNextSpawn();
+    scheduleDifficultyIncrease();
+    scheduleHeavyEnemySpawn();
+    scheduleFastEnemySpawn();
+    scheduleBossSpawn();
+    setTimeout(() => {
+        isRestarting = false;
+    }, 100);
+}
+
 updateScoreboard();
 updateAbilityStatus();
 
@@ -103,8 +155,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     console.log('Key pressed:', e.key);
     if (e.key === 'l' || e.key === 'L') {
-        score = 0;
-        updateScoreboard();
+        restartGame();
     }
     if (e.key === 'e' || e.key === 'E') {
         triggerSpecial();
@@ -482,11 +533,15 @@ function spawnEnemy() {
         const newX = parseFloat(enemy.style.left) + unitDirX * moveDistance;
         const newY = parseFloat(enemy.style.top) + unitDirY * moveDistance;
 
-        // Check if enemy reached cannon or out of bounds
         const dx = newX - targetX;
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 10 || newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
+        if (distance < 10) {
+            restartGame();
+            destroyEnemy();
+            return;
+        }
+        if (newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
             destroyEnemy();
         } else {
             enemy.style.left = `${newX}px`;
@@ -560,7 +615,12 @@ function spawnHeavyEnemy() {
         const dx = newX - targetX;
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 10 || newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
+        if (distance < 10) {
+            restartGame();
+            destroyEnemy();
+            return;
+        }
+        if (newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
             destroyEnemy();
         } else {
             enemy.style.left = `${newX}px`;
@@ -634,7 +694,12 @@ function spawnFastEnemy() {
         const dx = newX - targetX;
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 10 || newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
+        if (distance < 10) {
+            restartGame();
+            destroyEnemy();
+            return;
+        }
+        if (newX < -20 || newX > window.innerWidth + 20 || newY < -20 || newY > window.innerHeight + 20) {
             destroyEnemy();
         } else {
             enemy.style.left = `${newX}px`;
@@ -655,21 +720,24 @@ function increaseDifficulty() {
 }
 
 function scheduleDifficultyIncrease() {
-    setInterval(() => {
+    const timerId = setInterval(() => {
         increaseDifficulty();
     }, difficultyIncreaseInterval);
+    gameTimers.push(timerId);
 }
 
 function scheduleHeavyEnemySpawn() {
-    setInterval(() => {
+    const timerId = setInterval(() => {
         spawnHeavyEnemy();
     }, 10000);
+    gameTimers.push(timerId);
 }
 
 function scheduleFastEnemySpawn() {
-    setInterval(() => {
+    const timerId = setInterval(() => {
         spawnFastEnemy();
     }, 5000);
+    gameTimers.push(timerId);
 }
 
 function spawnBoss() {
@@ -735,7 +803,12 @@ function spawnBoss() {
         const dx = newX - targetX;
         const dy = newY - targetY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 10 || newX < -200 || newX > window.innerWidth + 200 || newY < -200 || newY > window.innerHeight + 200) {
+        if (distance < 10) {
+            restartGame();
+            destroyEnemy();
+            return;
+        }
+        if (newX < -200 || newX > window.innerWidth + 200 || newY < -200 || newY > window.innerHeight + 200) {
             destroyEnemy();
         } else {
             enemy.style.left = `${newX}px`;
@@ -747,16 +820,18 @@ function spawnBoss() {
 }
 
 function scheduleBossSpawn() {
-    setInterval(() => {
+    const timerId = setInterval(() => {
         spawnBoss();
     }, 30000);
+    gameTimers.push(timerId);
 }
 
 function scheduleNextSpawn() {
-    setTimeout(() => {
+    spawnLoopTimeoutId = setTimeout(() => {
         spawnEnemy();
         scheduleNextSpawn();
     }, getSpawnInterval());
+    gameTimers.push(spawnLoopTimeoutId);
 }
 
 scheduleNextSpawn();
